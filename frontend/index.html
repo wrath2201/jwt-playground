@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>JWT Playground</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <h1>JWT Playground</h1>
+
+  <section>
+    <h2>Register</h2>
+    <input type="text" id="reg-name" placeholder="Name" />
+    <input type="email" id="reg-email" placeholder="Email" />
+    <input type="password" id="reg-password" placeholder="Password" />
+    <button onclick="register()">Register</button>
+  </section>
+
+  <section>
+    <h2>Login</h2>
+    <input type="email" id="login-email" placeholder="Email" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+  </section>
+
+  <section>
+    <h2>Token</h2>
+    <pre id="token-box">No token yet</pre>
+    <button onclick="testProtected()">Test Protected Route</button>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
