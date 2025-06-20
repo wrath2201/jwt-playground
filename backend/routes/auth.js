@@ -89,4 +89,38 @@ router.get('/protected', authMiddleware, (req, res) => {
 });
 
 
+//---------------------------------------fetch all users------------------------------------
+router.get('/get-members', authMiddleware, async (req, res) => {
+  try {
+    const users = await User.find().select('-password'); // hide passwords
+    res.status(200).json({ members: users });
+  } catch (err) {
+    console.error('Error fetching members:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+//---------------------------------------delete user-------------------------------
+router.delete('/delete/:id', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    console.log('🗑️ Attempting to delete user ID:', userId);
+
+    const deletedUser = await User.findByIdAndDelete(userId);
+
+    if (!deletedUser) {
+      console.log('❌ No user found with ID:', userId);
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    console.log('✅ Deleted user:', deletedUser.email);
+    res.status(200).json({ msg: 'User deleted successfully' });
+  } catch (err) {
+    console.error('❌ Error deleting user:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+
+
 module.exports = router;
