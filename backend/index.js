@@ -9,7 +9,7 @@ dotenv.config();
 
 app.use(cors({
   origin: ['http://127.0.0.1:5500', 'http://localhost:5500'], // allow both
-  methods: ['GET', 'POST'],
+  methods: '*', // allows all methods
   credentials: true
 }));
 

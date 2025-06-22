@@ -3,7 +3,10 @@ body {
   max-width: 600px;
   margin: auto;
   padding: 20px;
+  background-color: #1c1c1c; /* or use #2f2f2f */
+  color: white; /* Optional: for better contrast */
 }
+
 
 section {
   border: 1px solid #ccc;

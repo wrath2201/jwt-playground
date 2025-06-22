@@ -1,4 +1,5 @@
 const API_BASE = 'http://localhost:5000/api/auth';
+import { setTokens } from './utils/token.js';
 
 async function login() {
   const email = document.getElementById('login-email').value;
@@ -10,13 +11,19 @@ async function login() {
     body: JSON.stringify({ email, password })
   });
 
-  const data = await response.json();
+console.log('Response status:', response.status);
+console.log('Raw response:', response);
 
-  if (data.token) {
-    localStorage.setItem('jwtToken', data.token); // ✅ Save token in browser
+const data = await response.json();
+console.log('Response  xyzabc data:', data);
+
+  if (data.accessToken && data.refreshToken) {
+    setTokens(data.accessToken, data.refreshToken);
     alert('Login successful!');
-    window.location.href = 'dashboard.html'; // redirect after login
+    window.location.href = 'dashboard.html';
   } else {
     alert(data.msg || 'Login failed');
   }
 }
+window.login = login;
+

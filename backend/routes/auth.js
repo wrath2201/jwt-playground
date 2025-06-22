@@ -70,9 +70,10 @@ router.post('/login', async (req, res) => {
     const payload = { userId: user._id };
 
     // Sign token
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const accessToken  = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
-    res.json({ token });
+    res.json({ accessToken  , refreshToken });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ msg: 'Server error' });
@@ -87,6 +88,26 @@ router.post('/login', async (req, res) => {
 router.get('/protected', authMiddleware, (req, res) => {
   res.json({ msg: `Welcome, ${req.user.userId}! This is a protected route.` });
 });
+
+
+//--------------------------------------------------------------------------------------------------------------------
+// Refresh Token Route
+router.post('/refresh-token', (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) return res.status(401).json({ msg: 'No refresh token provided' });
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const accessToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ accessToken });
+  } catch (err) {
+    console.error('❌ Refresh token error:', err);
+    res.status(401).json({ msg: 'Invalid or expired refresh token' });
+  }
+});
+
 
 
 //---------------------------------------fetch all users------------------------------------
