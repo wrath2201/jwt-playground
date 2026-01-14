@@ -1,18 +1,26 @@
 const jwt = require('jsonwebtoken');
+const redisClient = require('../utils/redisClient');
 
-const authMiddleware = (req, res, next) => {
-  const token = req.headers.token;
+const authMiddleware = async (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader || req.headers.token;
+
 
   if (!token) {
     return res.status(401).json({ msg: 'No token, authorization denied' });
   }
 
-  try {
+ try {
+    const isBlacklisted = await redisClient.get(token);
+    if (isBlacklisted) {
+      return res.status(401).json({ msg: 'Token is blacklisted. Please login again.' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Now req.user.userId is available in routes
+    req.user = decoded;
     next();
   } catch (err) {
-    res.status(401).json({ msg: 'Token is not valid' });
+    return res.status(401).json({ msg: 'Token is not valid' });
   }
 };
 

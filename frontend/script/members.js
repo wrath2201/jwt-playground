@@ -6,7 +6,10 @@ import {
 
 const API_BASE = 'http://localhost:5000/api/auth';
 
+
+
 async function loadMembers() {
+  console.log('🔍 loadMembers called');
   let token = getAccessToken();
 
   let response = await fetch(`${API_BASE}/get-members`, {
@@ -16,6 +19,7 @@ async function loadMembers() {
       'Authorization': `Bearer ${token}`
     }
   });
+   console.log('🔁 Members response (first try):', response); 
 
   // Try refreshing if unauthorized
   if (response.status === 401 || response.status === 403) {
@@ -29,6 +33,7 @@ async function loadMembers() {
         'Authorization': `Bearer ${token}`
       }
     });
+    console.log('🔁 Members response (after refresh):', response);
   }
 
   const data = await response.json();

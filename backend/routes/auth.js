@@ -5,8 +5,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const jwt = require('jsonwebtoken');
-const authMiddleware=require('../middleware/authMiddleware')
-
+const authMiddleware = require('../middleware/authMiddleware')
+const redisClient = require('../utils/redisClient')
 
 //---------------------------------------registering user api--------------------------------------------------
 // @route   POST /register
@@ -70,10 +70,10 @@ router.post('/login', async (req, res) => {
     const payload = { userId: user._id };
 
     // Sign token
-    const accessToken  = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
     const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
 
-    res.json({ accessToken  , refreshToken });
+    res.json({ accessToken, refreshToken });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ msg: 'Server error' });
@@ -138,6 +138,23 @@ router.delete('/delete/:id', authMiddleware, async (req, res) => {
     res.status(200).json({ msg: 'User deleted successfully' });
   } catch (err) {
     console.error('❌ Error deleting user:', err);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+//---------------------------------------redis--------------------------------
+router.post('/logout', authMiddleware, async (req, res) => {
+  const token = req.headers.token || req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(400).json({ msg: 'No token provided' });
+
+  try {
+    await redisClient.set(token, 'blacklisted', {
+      EX: 60 * 60 // 1 hour TTL
+    });
+
+    res.json({ msg: 'Logged out successfully' });
+  } catch (err) {
+    console.error('Logout error:', err);
     res.status(500).json({ msg: 'Server error' });
   }
 });
