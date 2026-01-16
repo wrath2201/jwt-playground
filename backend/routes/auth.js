@@ -4,9 +4,13 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
-const jwt = require('jsonwebtoken');
 const authMiddleware = require('../middleware/authMiddleware')
 const redisClient = require('../utils/redisClient')
+const{
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken
+}=require('../utils/tokenService');
 
 //---------------------------------------registering user api--------------------------------------------------
 // @route   POST /register
@@ -70,8 +74,8 @@ router.post('/login', async (req, res) => {
     const payload = { userId: user._id };
 
     // Sign token
-    const accessToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
-    const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+    const accessToken = generateAcessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
 
     res.json({ accessToken, refreshToken });
   } catch (err) {
@@ -98,8 +102,8 @@ router.post('/refresh-token', (req, res) => {
   if (!refreshToken) return res.status(401).json({ msg: 'No refresh token provided' });
 
   try {
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const accessToken = jwt.sign({ userId: decoded.userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const decoded =verifyRefreshToken(refreshToken);
+    const accessToken = generateAcessToken({userId:decoded.userId});
 
     res.json({ accessToken });
   } catch (err) {
