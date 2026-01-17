@@ -16,7 +16,8 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ msg: 'Token is blacklisted. Please login again.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const{veridyAcessToken}=require('../utils/tokenService');
+    const decoded = verifyAcessToken(token);
     req.user = decoded;
     next();
   } catch (err) {

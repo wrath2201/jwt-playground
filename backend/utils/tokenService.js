@@ -1,30 +1,41 @@
-const jwt= require('jsonwebtoken');
+const jwt = require('jsonwebtoken');
 
-//---ACCESS TOKEN----
-
-const generateAccessToken =(payload)=>{
-    return jwt.sign(
-        payload,
-        process.env.JWT_Secret,
-        {expiresIn:'15m'}
-    );
+// -------- ACCESS TOKEN --------
+const generateAccessToken = (payload) => {
+  return jwt.sign(
+    { ...payload, type: 'access' },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
 };
 
 const verifyAccessToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  if (decoded.type !== 'access') {
+    throw new Error('Invalid token type');
+  }
+
+  return decoded;
 };
 
-//---REFRESH TOKEN-------
-const generateRefreshToken=(Token)=>{
-    return jwt.sign(
-        payload,
-        process.env.JWT_REFRESH_SECRRET,
-        { expiresIn :'7d'}
-    );
+// -------- REFRESH TOKEN --------
+const generateRefreshToken = (payload) => {
+  return jwt.sign(
+    { ...payload, type: 'refresh' },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
 };
 
-const verifyRefreshToken=(Token)=>{
-    return jwt.verify(Token,process.env.JWT_REFRESH_SECRET);
+const verifyRefreshToken = (token) => {
+  const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+  if (decoded.type !== 'refresh') {
+    throw new Error('Invalid token type');
+  }
+
+  return decoded;
 };
 
 module.exports = {
