@@ -16,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ msg: 'Token is blacklisted. Please login again.' });
     }
 
-    const{veridyAcessToken}=require('../utils/tokenService');
+    const{verifyAcessToken}=require('../utils/tokenService');
     const decoded = verifyAcessToken(token);
     req.user = decoded;
     next();

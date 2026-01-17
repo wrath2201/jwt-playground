@@ -13,7 +13,7 @@ This project is intentionally designed as a **learning and engineering-focused i
 * Separates **access tokens** and **refresh tokens**
 * Protects API routes using middleware
 * Supports user registration and login
-* Demonstrates token refresh and logout concepts
+* Demonstrates token refresh and session invalidation concepts
 * Uses MongoDB for persistence
 * Uses Redis for token/session-related state
 
@@ -81,7 +81,7 @@ backend/
 
   * Long-lived
   * Used to obtain new access tokens
-  * Intended to be tracked server-side
+  * Tracked server-side using Redis to enable session control
 
 The project intentionally explores **design trade-offs** around token storage, rotation, and invalidation.
 
@@ -114,6 +114,10 @@ JWT_REFRESH_SECRET=your_refresh_token_secret
 ```
 
 ### 4. Start the server
+```
+Ensure Redis is running locally before starting the server.
+```
+
 
 ```bash
 npm start

@@ -38,15 +38,30 @@ These notes document those issues before fixes are applied.
 * No single source of truth for token creation or verification
 * Makes future changes risky and inconsistent
 
+Status: Resolved  
+Fix: Introduced a centralized tokenService to handle access and refresh token creation and verification.  
+Lesson: Token logic must have a single source of truth to avoid inconsistent behavior.
+
+
 **E18 — JWT logic duplicated across routes**
 
 * `jwt.sign` and `jwt.verify` used directly in multiple files
 * Leads to inconsistent expiry, secrets, and behavior
 
+Status: Resolved  
+Fix: Removed direct usage of jsonwebtoken from routes and delegated all token logic to tokenService.  
+Lesson: Centralization simplifies changes and prevents subtle auth bugs.
+
+
 **E3 — No clear distinction between token types**
 
 * Access and refresh tokens are treated similarly
 * Middleware assumes every token is an access token
+
+Status: Resolved  
+Fix: Embedded explicit token type (access / refresh) into JWT payload and enforced it during verification.  
+Lesson: Tokens must self-identify to prevent accidental misuse.
+
 
 ---
 
@@ -57,10 +72,20 @@ These notes document those issues before fixes are applied.
 * Server cannot revoke refresh tokens
 * Stateless refresh tokens remain valid until expiry
 
+Status: Resolved  
+Fix: Refresh tokens are now stored in Redis with TTL and validated against server-side state.  
+Lesson: Refresh tokens represent sessions and must be stateful.
+
+
 **E12 — Refresh token endpoint does not validate server-side state**
 
 * Cryptographic validity is checked
 * Authorization is not checked
+
+Status: Resolved  
+Fix: Refresh endpoint now checks Redis to ensure the token was actually issued by the server.  
+Lesson: Cryptographic validity alone is insufficient for session control.
+
 
 **E13 — No refresh token rotation**
 

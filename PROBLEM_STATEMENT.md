@@ -97,6 +97,8 @@ To address these problems, real systems introduce **refresh tokens**.
 * Access tokens become short-lived
 * Refresh tokens are long-lived
 * Access tokens are reissued using refresh tokens
+* This typically requires the server to retain some form of session state.
+
 
 This improves usability, but introduces **new complexity**:
 
@@ -121,7 +123,8 @@ It aims to understand:
 * Why blacklisting access tokens is usually a bad idea
 * Why token lifecycle design matters more than syntax
 
-Several parts of the code are intentionally left incomplete or under revision to surface these issues clearly.
+Several parts of the code are intentionally revised iteratively to expose common design mistakes and their fixes.
+
 
 ---
 

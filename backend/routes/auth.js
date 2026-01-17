@@ -16,6 +16,7 @@ const{
 // @route   POST /register
 // @desc    Register a new user
 // @access  Public
+//api/auth/register
 router.post('/register', async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -58,24 +59,26 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
-    // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
-    // Create payload
     const payload = { userId: user._id };
 
-    // Sign token
-    const accessToken = generateAcessToken(payload);
+    const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
+
+    await redisClient.set(
+      `refresh:${user._id}`,
+      refreshToken,
+      { EX: 7 * 24 * 60 * 60 }
+    );
 
     res.json({ accessToken, refreshToken });
   } catch (err) {
@@ -96,16 +99,29 @@ router.get('/protected', authMiddleware, (req, res) => {
 
 //--------------------------------------------------------------------------------------------------------------------
 // Refresh Token Route
-router.post('/refresh-token', (req, res) => {
+router.post('/refresh-token', async (req, res) => {
   const { refreshToken } = req.body;
 
-  if (!refreshToken) return res.status(401).json({ msg: 'No refresh token provided' });
+  if (!refreshToken) {
+    return res.status(401).json({ msg: 'No refresh token provided' });
+  }
 
   try {
-    const decoded =verifyRefreshToken(refreshToken);
-    const accessToken = generateAcessToken({userId:decoded.userId});
+    const decoded = verifyRefreshToken(refreshToken);
 
-    res.json({ accessToken });
+    const storedToken = await redisClient.get(
+      `refresh:${decoded.userId}`
+    );
+
+    if (!storedToken || storedToken !== refreshToken) {
+      return res.status(401).json({ msg: 'Invalid refresh token' });
+    }
+
+    const newAccessToken = generateAccessToken({
+      userId: decoded.userId
+    });
+
+    res.json({ accessToken: newAccessToken });
   } catch (err) {
     console.error('❌ Refresh token error:', err);
     res.status(401).json({ msg: 'Invalid or expired refresh token' });
