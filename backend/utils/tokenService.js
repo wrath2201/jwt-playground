@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 
-// -------- ACCESS TOKEN --------
+// ---- ACCESS TOKEN ----
 const generateAccessToken = (payload) => {
   return jwt.sign(
     { ...payload, type: 'access' },
@@ -13,13 +13,13 @@ const verifyAccessToken = (token) => {
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
   if (decoded.type !== 'access') {
-    throw new Error('Invalid token type');
+    throw new Error('Invalid access token');
   }
 
   return decoded;
 };
 
-// -------- REFRESH TOKEN --------
+// ---- REFRESH TOKEN ----
 const generateRefreshToken = (payload) => {
   return jwt.sign(
     { ...payload, type: 'refresh' },
@@ -32,7 +32,7 @@ const verifyRefreshToken = (token) => {
   const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
   if (decoded.type !== 'refresh') {
-    throw new Error('Invalid token type');
+    throw new Error('Invalid refresh token');
   }
 
   return decoded;

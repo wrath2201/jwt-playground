@@ -98,7 +98,6 @@ router.get('/protected', authMiddleware, (req, res) => {
 
 
 //--------------------------------------------------------------------------------------------------------------------
-// Refresh Token Route
 router.post('/refresh-token', async (req, res) => {
   const { refreshToken } = req.body;
 
@@ -109,19 +108,33 @@ router.post('/refresh-token', async (req, res) => {
   try {
     const decoded = verifyRefreshToken(refreshToken);
 
-    const storedToken = await redisClient.get(
-      `refresh:${decoded.userId}`
-    );
+    const redisKey = `refresh:${decoded.userId}`;
+    const storedToken = await redisClient.get(redisKey);
 
     if (!storedToken || storedToken !== refreshToken) {
       return res.status(401).json({ msg: 'Invalid refresh token' });
     }
 
+    // 🔁 ROTATION
     const newAccessToken = generateAccessToken({
       userId: decoded.userId
     });
 
-    res.json({ accessToken: newAccessToken });
+    const newRefreshToken = generateRefreshToken({
+      userId: decoded.userId
+    });
+
+    await redisClient.set(
+      redisKey,
+      newRefreshToken,
+      { EX: 7 * 24 * 60 * 60 }
+    );
+
+    res.json({
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken
+    });
+
   } catch (err) {
     console.error('❌ Refresh token error:', err);
     res.status(401).json({ msg: 'Invalid or expired refresh token' });

@@ -92,6 +92,14 @@ Lesson: Cryptographic validity alone is insufficient for session control.
 * Same refresh token can be reused repeatedly
 * Increases risk of replay attacks
 
+### E13 — No refresh token rotation ✅ RESOLVED
+
+Status: Resolved  
+Fix: Implemented refresh token rotation by invalidating old refresh tokens and issuing a new one on each refresh.  
+Lesson: Rotation prevents replay attacks and ensures only one active refresh token per session.
+
+
+
 **E15 — Refresh token accepted from request body**
 
 * Unsafe transport decision
