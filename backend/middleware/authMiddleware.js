@@ -1,23 +1,21 @@
 const jwt = require('jsonwebtoken');
-const redisClient = require('../utils/redisClient');
 
-const authMiddleware = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : authHeader || req.headers.token;
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers.authorization;
 
-
-  if (!token) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ msg: 'No token, authorization denied' });
   }
 
- try {
-    const isBlacklisted = await redisClient.get(token);
-    if (isBlacklisted) {
-      return res.status(401).json({ msg: 'Token is blacklisted. Please login again.' });
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.type !== 'access') {
+      return res.status(401).json({ msg: 'Invalid access token' });
     }
 
-    const{verifyAcessToken}=require('../utils/tokenService');
-    const decoded = verifyAcessToken(token);
     req.user = decoded;
     next();
   } catch (err) {
@@ -26,4 +24,3 @@ const authMiddleware = async (req, res, next) => {
 };
 
 module.exports = authMiddleware;
-

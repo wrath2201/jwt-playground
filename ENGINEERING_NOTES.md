@@ -115,6 +115,10 @@ Lesson: Rotation prevents replay attacks and ensures only one active refresh tok
 * Refresh tokens remain valid
 * Logout is ineffective
 
+Status: Resolved
+Fix: Logout now deletes the refresh token from Redis instead of blacklisting access tokens, correctly terminating the user session.
+Lesson: Logout must invalidate the session token, not short-lived access tokens.
+
 **E1 — Redis used to blacklist access tokens**
 
 * Access tokens are short-lived
@@ -153,9 +157,17 @@ Lesson: Rotation prevents replay attacks and ensures only one active refresh tok
 * Side effects during module loading
 * No lifecycle control
 
+Status: Resolved
+Fix: Moved Redis connection logic behind an explicit connectRedis() function invoked during server startup.
+Lesson: Infrastructure connections should be explicit and controlled, not triggered as side effects of module imports.
+
 **E8 — No reconnect strategy**
 
 * Redis failure leads to unstable behavior
+
+Status: Resolved
+Fix: Ensured Redis connects successfully before the server begins accepting requests.
+Lesson: External dependencies must be ready before handling application traffic.
 
 **E9 — No graceful shutdown**
 

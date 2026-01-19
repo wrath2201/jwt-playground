@@ -5,7 +5,8 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware')
-const redisClient = require('../utils/redisClient')
+const { redisClient } = require('../utils/redisClient');
+
 const{
   generateAccessToken,
   generateRefreshToken,
@@ -56,10 +57,17 @@ router.post('/register', async (req, res) => {
 // @desc    Authenticate user and return token
 // @access  Public
 router.post('/login', async (req, res) => {
+
+  console.log('LOGIN HIT');
   const { email, password } = req.body;
+
+  
 
   try {
     const user = await User.findOne({ email });
+    
+    console.log('LOGIN USER:', user);
+
     if (!user) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
@@ -175,15 +183,13 @@ router.delete('/delete/:id', authMiddleware, async (req, res) => {
   }
 });
 
-//---------------------------------------redis--------------------------------
+//---------------------------------------logout--------------------------------
 router.post('/logout', authMiddleware, async (req, res) => {
-  const token = req.headers.token || req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(400).json({ msg: 'No token provided' });
-
   try {
-    await redisClient.set(token, 'blacklisted', {
-      EX: 60 * 60 // 1 hour TTL
-    });
+    const userId = req.user.userId;
+
+    // delete refresh token -> end session
+    await redisClient.del(`refresh:${userId}`);
 
     res.json({ msg: 'Logged out successfully' });
   } catch (err) {
