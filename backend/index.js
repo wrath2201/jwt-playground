@@ -2,7 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const cookieParser=require('cookie-parser');
 const { connectRedis } = require('./utils/redisClient');
+
 
 dotenv.config();
 
@@ -15,6 +17,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
 
 const authRoutes = require('./routes/auth');
 app.use('/api/auth', authRoutes);
@@ -46,3 +49,4 @@ const startServer = async () => {
 };
 
 startServer();
+

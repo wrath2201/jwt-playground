@@ -32,7 +32,7 @@ These notes document those issues before fixes are applied.
 
 ### 🔴 Layer 1: Token Design (Foundation)
 
-**E21 — `tokenService.js` is empty**
+**E21 — `tokenService.js` is empty**  ✅ RESOLVED
 
 * Token logic is scattered across routes
 * No single source of truth for token creation or verification
@@ -43,7 +43,7 @@ Fix: Introduced a centralized tokenService to handle access and refresh token cr
 Lesson: Token logic must have a single source of truth to avoid inconsistent behavior.
 
 
-**E18 — JWT logic duplicated across routes**
+**E18 — JWT logic duplicated across routes**  ✅ RESOLVED
 
 * `jwt.sign` and `jwt.verify` used directly in multiple files
 * Leads to inconsistent expiry, secrets, and behavior
@@ -53,7 +53,7 @@ Fix: Removed direct usage of jsonwebtoken from routes and delegated all token lo
 Lesson: Centralization simplifies changes and prevents subtle auth bugs.
 
 
-**E3 — No clear distinction between token types**
+**E3 — No clear distinction between token types**  ✅ RESOLVED
 
 * Access and refresh tokens are treated similarly
 * Middleware assumes every token is an access token
@@ -67,7 +67,7 @@ Lesson: Tokens must self-identify to prevent accidental misuse.
 
 ### 🔴 Layer 2: Refresh Token Lifecycle
 
-**E11 — Refresh tokens are not stored**
+**E11 — Refresh tokens are not stored**  ✅ RESOLVED
 
 * Server cannot revoke refresh tokens
 * Stateless refresh tokens remain valid until expiry
@@ -77,7 +77,7 @@ Fix: Refresh tokens are now stored in Redis with TTL and validated against serve
 Lesson: Refresh tokens represent sessions and must be stateful.
 
 
-**E12 — Refresh token endpoint does not validate server-side state**
+**E12 — Refresh token endpoint does not validate server-side state**  ✅ RESOLVED
 
 * Cryptographic validity is checked
 * Authorization is not checked
@@ -87,12 +87,11 @@ Fix: Refresh endpoint now checks Redis to ensure the token was actually issued b
 Lesson: Cryptographic validity alone is insufficient for session control.
 
 
-**E13 — No refresh token rotation**
+**E13 — No refresh token rotation**  ✅ RESOLVED
 
 * Same refresh token can be reused repeatedly
 * Increases risk of replay attacks
 
-### E13 — No refresh token rotation ✅ RESOLVED
 
 Status: Resolved  
 Fix: Implemented refresh token rotation by invalidating old refresh tokens and issuing a new one on each refresh.  
@@ -100,16 +99,42 @@ Lesson: Rotation prevents replay attacks and ensures only one active refresh tok
 
 
 
-**E15 — Refresh token accepted from request body**
+**E15 — Refresh token accepted from request body**  ✅ RESOLVED
 
 * Unsafe transport decision
 * No consistent policy for token handling
+
+Status: Resolved
+
+Problem:
+Refresh tokens were being sent in the request body, making them accessible to client-side JavaScript. This exposed long-lived session credentials to potential XSS-based exfiltration, significantly increasing the blast radius of frontend vulnerabilities.
+
+Fix:
+Refresh tokens were moved to HTTP-only cookies.
+
+Tokens are now set by the server using Set-Cookie
+
+Cookies are marked HttpOnly so JavaScript cannot read them
+
+Refresh endpoint reads the token from req.cookies instead of request body
+
+Token rotation logic remains unchanged
+
+Redis continues to act as the source of truth for valid refresh tokens
+
+Lesson:
+Refresh tokens require stronger protection than access tokens.
+Using HTTP-only cookies removes an entire class of XSS-based attacks at the cost of reduced debugging visibility and the introduction of CSRF considerations. This trade-off is acceptable given the higher security requirements of refresh tokens.
+
+Additional Insight:
+Cookies are a transport mechanism, not an authorization system.
+Even with HTTP-only cookies, refresh tokens must still be validated and managed server-side (Redis), otherwise refresh flows will fail correctly.
 
 ---
 
 ### 🔴 Layer 3: Logout & Invalidation
 
-**E14 — Logout invalidates the wrong token**
+**E14 — Logout invalidates the wrong token**  ✅ RESOLVED
 
 * Access tokens are blacklisted
 * Refresh tokens remain valid
@@ -152,7 +177,7 @@ Lesson: Logout must invalidate the session token, not short-lived access tokens.
 * No environment-based setup
 * Works only in local default setups
 
-**E7 — Redis connects on import**
+**E7 — Redis connects on import**  ✅ RESOLVED
 
 * Side effects during module loading
 * No lifecycle control
@@ -161,7 +186,7 @@ Status: Resolved
 Fix: Moved Redis connection logic behind an explicit connectRedis() function invoked during server startup.
 Lesson: Infrastructure connections should be explicit and controlled, not triggered as side effects of module imports.
 
-**E8 — No reconnect strategy**
+**E8 — No reconnect strategy**  ✅ RESOLVED
 
 * Redis failure leads to unstable behavior
 

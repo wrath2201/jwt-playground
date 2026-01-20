@@ -88,7 +88,14 @@ router.post('/login', async (req, res) => {
       { EX: 7 * 24 * 60 * 60 }
     );
 
-    res.json({ accessToken, refreshToken });
+    res.cookie('refreshToken',refreshToken,{
+      httpOnly:true,
+      samesite:'strict',
+      secure:false, // true in production
+      maxAge:7*24*60*60*1000,
+      path:'/api/auth/refresh-token'
+    }).json({accessToken})
+
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ msg: 'Server error' });
@@ -105,13 +112,15 @@ router.get('/protected', authMiddleware, (req, res) => {
 });
 
 
-//--------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------refresh token-------------------------------------------------------------------------
 router.post('/refresh-token', async (req, res) => {
-  const { refreshToken } = req.body;
-
+  const refreshToken  = req.cookies.refreshToken;
+  
   if (!refreshToken) {
-    return res.status(401).json({ msg: 'No refresh token provided' });
-  }
+  return res.status(401).json({ msg: 'No refresh token provided' });
+}
+
+ 
 
   try {
     const decoded = verifyRefreshToken(refreshToken);
@@ -138,9 +147,15 @@ router.post('/refresh-token', async (req, res) => {
       { EX: 7 * 24 * 60 * 60 }
     );
 
-    res.json({
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken
+    res.cookie('refreshToken',newRefreshToken,{
+      httpOnly:true,
+      sameSite:'strict',
+      secure:false,
+      maxAge:7*24*60*60*1000,
+      path:'/api/auth/refresh-token'
+    })
+    .json({
+      accessToken: newAccessToken
     });
 
   } catch (err) {
@@ -191,7 +206,10 @@ router.post('/logout', authMiddleware, async (req, res) => {
     // delete refresh token -> end session
     await redisClient.del(`refresh:${userId}`);
 
-    res.json({ msg: 'Logged out successfully' });
+    res.clearCookie('refreshToken',{
+      path:'/api/auth/refresh-Token'
+    })
+    .json({ msg: 'Logged out successfully' });
   } catch (err) {
     console.error('Logout error:', err);
     res.status(500).json({ msg: 'Server error' });
