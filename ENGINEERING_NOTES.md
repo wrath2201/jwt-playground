@@ -144,10 +144,38 @@ Status: Resolved
 Fix: Logout now deletes the refresh token from Redis instead of blacklisting access tokens, correctly terminating the user session.
 Lesson: Logout must invalidate the session token, not short-lived access tokens.
 
-**E1 — Redis used to blacklist access tokens**
+**E1 — Redis used to blacklist access tokens**  ✅ RESOLVED
 
 * Access tokens are short-lived
 * Blacklisting compensates for poor token design
+
+Status: Resolved (by design decision)
+
+Problem:
+Access tokens were previously considered for blacklisting to enforce immediate logout semantics. This introduced Redis checks in the authorization middleware, effectively making Redis a dependency for every protected API request.
+
+Observation:
+After implementing short-lived access tokens and stateful, revocable refresh tokens, access tokens no longer represent session ownership. Logout is enforced by revoking the refresh token, preventing issuance of new access tokens.
+
+Decision:
+Access token blacklisting was removed.
+The system relies on:
+
+short-lived, stateless access tokens for authorization
+
+stateful refresh tokens for session control
+
+Redis is no longer part of the access-token verification path.
+
+Rationale:
+Blacklisting access tokens provides immediate revocation only when the system already knows a token should be revoked (typically on logout). This benefit does not justify the operational cost of placing Redis in the hot path for every protected request, especially when refresh-token revocation already enforces session termination.
+
+Lesson:
+Access-token blacklisting is not inherently “more secure.”
+It is a policy choice that trades scalability and simplicity for strict logout semantics. In systems where refresh tokens control session continuity, blacklisting access tokens is often redundant.
+
+Additional Insight:
+This issue was partially corrected earlier without full understanding. Revisiting it after implementing refresh-token rotation and secure transport clarified why the stateless design is preferable in this system.
 
 **E5 — Redis used in access-token verification path**
 
@@ -162,6 +190,22 @@ Lesson: Logout must invalidate the session token, not short-lived access tokens.
 
 * Authorization header and custom headers both allowed
 * Increases ambiguity and bugs
+
+Status: Resolved
+
+Problem:
+The system previously allowed flexibility in where access tokens could be read from (headers, custom headers, or other locations). This created ambiguity about which token source was authoritative and increased the attack surface.
+
+Decision:
+Access tokens are accepted only from the Authorization: Bearer <token> header.
+If an access token appears anywhere else, the request is rejected.
+
+Rationale:
+Allowing multiple token sources leads to inconsistent behavior, harder debugging, and weaker security guarantees. A single authoritative source makes authentication predictable, auditable, and easier to secure.
+
+Lesson:
+Authentication systems should be strict and boring.
+Flexibility in token sources is a liability, not a feature.
 
 **E4 — Generic JWT error handling**
 
