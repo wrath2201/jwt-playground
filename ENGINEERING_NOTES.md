@@ -186,7 +186,7 @@ This issue was partially corrected earlier without full understanding. Revisitin
 
 ### 🔴 Layer 4: Middleware Issues
 
-**E2 — Multiple token sources accepted**
+**E2 — Multiple token sources accepted**   ✅ RESOLVED
 
 * Authorization header and custom headers both allowed
 * Increases ambiguity and bugs
@@ -207,10 +207,22 @@ Lesson:
 Authentication systems should be strict and boring.
 Flexibility in token sources is a liability, not a feature.
 
-**E4 — Generic JWT error handling**
+**E4 — Generic JWT error handling**   ✅ RESOLVED
 
 * No distinction between expired, invalid, or malformed tokens
 * Harder to debug and reason about failures
+
+Status: Resolved
+
+Problem:
+All JWT verification failures were collapsed into a single generic error, despite representing different failure modes with different recovery actions.
+
+Fix:
+JWT verification errors are now categorized (expired token, invalid token, wrong token type) and returned with distinct error codes while maintaining a uniform HTTP status.
+
+Lesson:
+Authentication errors should be semantically precise but not verbose. Clear error categorization improves client behavior and debuggability without increasing attack surface.
+
 
 ---
 
