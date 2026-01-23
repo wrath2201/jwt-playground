@@ -177,10 +177,22 @@ It is a policy choice that trades scalability and simplicity for strict logout s
 Additional Insight:
 This issue was partially corrected earlier without full understanding. Revisiting it after implementing refresh-token rotation and secure transport clarified why the stateless design is preferable in this system.
 
-**E5 — Redis used in access-token verification path**
+**E5 — Redis used in access-token verification path**    ✅ RESOLVED
 
 * Every protected request depends on Redis
 * Increases latency and failure surface
+
+Status: Resolved (Intentional Trade-off)
+
+Problem:
+Immediate access-token revocation on logout requires server-side state, forcing a shared store into the access-token verification path and creating a hot path dependency.
+
+Decision:
+This system explicitly requires logout to immediately revoke access. Therefore, access-token blacklisting via Redis is intentionally accepted despite the added latency and failure surface.
+
+Lesson:
+Stateless JWT verification and immediate revocation are mutually exclusive. Introducing Redis into the hot path is not a mistake if it is driven by explicit security requirements rather than convenience.
+
 
 ---
 
