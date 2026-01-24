@@ -18,7 +18,13 @@ const{
 // @desc    Register a new user
 // @access  Public
 //api/auth/register
+const {registerSchema} =require('./validators/authValidators')
 router.post('/register', async (req, res) => {
+
+  const { error } = registerSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ msg: error.details[0].message });
+  }
   const { name, email, password } = req.body;
 
   try {
@@ -56,13 +62,17 @@ router.post('/register', async (req, res) => {
 // @route   POST /login
 // @desc    Authenticate user and return token
 // @access  Public
+const { loginSchema } = require('./validators/authValidators');
 router.post('/login', async (req, res) => {
+
+  const { error } = loginSchema.validate(req.body);
+  if (error) {
+    return res.status(400).json({ msg: error.details[0].message });
+  }
 
   console.log('LOGIN HIT');
   const { email, password } = req.body;
-
   
-
   try {
     const user = await User.findOne({ email });
     
@@ -113,9 +123,10 @@ router.get('/protected', authMiddleware, (req, res) => {
 
 
 //-------------------------------------------refresh token-------------------------------------------------------------------------
+
 router.post('/refresh-token', async (req, res) => {
   const refreshToken  = req.cookies.refreshToken;
-  
+
   if (!refreshToken) {
   return res.status(401).json({ msg: 'No refresh token provided' });
 }

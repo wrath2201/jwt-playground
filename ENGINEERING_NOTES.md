@@ -315,6 +315,22 @@ Lesson: External dependencies must be ready before handling application traffic.
 
 * Routes trust incoming request bodies blindly
 
+Status: Resolved
+
+Problem:
+Auth routes consumed unvalidated request bodies, causing downstream code (DB queries, bcrypt) to assume presence, type, and format of inputs.
+
+Decision:
+Validation is enforced at a single centralized boundary (route entry) before any business logic executes.
+
+Design:
+- Input validation checks structure and format.
+- Domain rules (password strength, normalization) are handled separately.
+
+Lesson:
+Validation is a boundary concern. Separating input correctness from business rules improves clarity, debuggability, and long-term maintainability.
+
+
 **E20 — Auth routes mix responsibilities**
 
 * Token logic, Redis, auth, and routing combined
