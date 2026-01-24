@@ -71,7 +71,8 @@ router.post('/login', async (req, res) => {
   }
 
   console.log('LOGIN HIT');
-  const { email, password } = req.body;
+  const email = req.body.email.toLowerCase().trim();
+  const password = req.body.password;
   
   try {
     const user = await User.findOne({ email });

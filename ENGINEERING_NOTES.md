@@ -290,17 +290,41 @@ Lesson: External dependencies must be ready before handling application traffic.
 
 ### 🔴 Layer 7: Data Model Weaknesses
 
-**E22 — User model has no timestamps**
+**E22 — User model has no timestamps**  ✅ RESOLVED
 
 * Hard to audit or debug user lifecycle
 
-**E24 — Email is not normalized**
+Status: Resolved
+
+Problem:
+User records lacked creation and update metadata, making debugging, auditing, and future feature development difficult.
+
+Fix:
+Enabled automatic timestamps at the schema level using Mongoose's built-in support.
+
+Lesson:
+Timestamps are foundational metadata and should always be managed by the data layer, not manually in application logic.
+
+
+**E24 — Email is not normalized** ✅ RESOLVED
 
 * Case-sensitive inconsistencies possible
 
-**E23 — No password constraints**
+Status: Resolved
+Fix: Enforced email normalization at the schema level using lowercase and trim.
+Lesson: Identity normalization must be guaranteed at the data layer to prevent account fragmentation and inconsistent authentication behavior.
+
+NOTE:Input email must also be normalized before queries, since schema-level normalization only applies at persistence time.
+
+
+**E23 — No password constraints** ✅ RESOLVED
 
 * Weak passwords allowed
+
+Status: Resolved
+Fix: Enforced minimum and maximum password length and basic entropy rules at the validation layer.
+Lesson: Password policy must balance security and usability; validation is the correct enforcement boundary, not frontend-only checks.
+
 
 **E27 — No schema-level hooks**
 
@@ -311,7 +335,7 @@ Lesson: External dependencies must be ready before handling application traffic.
 
 ### 🔴 Layer 8: Input & Structure
 
-**E19 — No input validation**
+**E19 — No input validation**  ✅ RESOLVED
 
 * Routes trust incoming request bodies blindly
 
