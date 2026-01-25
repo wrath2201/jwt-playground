@@ -326,10 +326,14 @@ Fix: Enforced minimum and maximum password length and basic entropy rules at the
 Lesson: Password policy must balance security and usability; validation is the correct enforcement boundary, not frontend-only checks.
 
 
-**E27 — No schema-level hooks**
+**E27 — No schema-level hooks**   ✅ RESOLVED
 
 * Password hashing handled entirely in routes
 * Business rules leak into controllers
+
+Status: Resolved
+Fix: Moved password hashing to a schema-level pre-save hook.
+Lesson: Security invariants must be enforced at the data layer to prevent accidental or inconsistent behavior across code paths.
 
 ---
 
