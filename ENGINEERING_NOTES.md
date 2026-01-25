@@ -240,10 +240,14 @@ Authentication errors should be semantically precise but not verbose. Clear erro
 
 ### 🔴 Layer 5: Redis Client Design
 
-**E6 — Redis client has no configuration**
+**E6 — Redis client has no configuration**   ✅ RESOLVED
 
 * No environment-based setup
 * Works only in local default setups
+
+Status: Resolved
+Fix: Redis client now reads connection details from environment (REDIS_URL) with a safe local fallback.
+Lesson: Infrastructure dependencies must be configurable via environment variables to support multiple deployment environments.
 
 **E7 — Redis connects on import**  ✅ RESOLVED
 
@@ -262,13 +266,20 @@ Status: Resolved
 Fix: Ensured Redis connects successfully before the server begins accepting requests.
 Lesson: External dependencies must be ready before handling application traffic.
 
-**E9 — No graceful shutdown**
+**E9 — No graceful shutdown**  ✅ RESOLVED
 
 * Open connections on server termination
 
-**E10 — No Redis abstraction**
+Status: Resolved
+Fix: Added signal handlers (SIGINT, SIGTERM) to gracefully close MongoDB and Redis connections before process exit.
+Lesson: Long-lived infrastructure connections must be explicitly closed during shutdown to ensure clean resource management.
+
+**E10 — No Redis abstraction**   ✅ RESOLVED
 
 * Business logic tightly coupled to Redis API
+Status: Resolved
+Fix: Introduced a sessionStore abstraction layer to encapsulate Redis operations for refresh token storage, verification, and invalidation.
+Lesson: Business logic should depend on abstractions, not concrete infrastructure implementations.
 
 ---
 
@@ -371,10 +382,14 @@ Lesson:
 Validation is a boundary concern. Separating input correctness from business rules improves clarity, debuggability, and long-term maintainability.
 
 
-**E20 — Auth routes mix responsibilities**
+**E20 — Auth routes mix responsibilities** ⚠️ PARTIALLY
 
 * Token logic, Redis, auth, and routing combined
 * Hard to reason about and refactor safely
+
+Status: Partially resolved
+Fix: Extracted token logic and session storage into dedicated modules (tokenService, sessionStore), reducing responsibility overlap inside routes.
+Lesson: Gradual separation of concerns improves maintainability, even when full service-layer refactoring is deferred.
 
 ---
 

@@ -5,9 +5,14 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware')
-const { redisClient } = require('../utils/redisClient');
 const requireAdmin = require('../middleware/requireAdmin');
 const crypto = require('crypto');
+const {
+  saveRefreshToken,
+  verifyRefreshToken,
+  invalidateRefreshToken,
+} = require('../services/sessionStore');
+
 
 const hashToken = (token) => {
   return crypto.createHash('sha256').update(token).digest('hex');
@@ -103,11 +108,8 @@ router.post('/login', async (req, res) => {
     const hashedRefreshToken = hashToken(refreshToken);
     console.log('ABOUT TO WRITE TO REDIS');
 
-    await redisClient.set(
-      `refresh:${user._id}`,
-      hashedRefreshToken,
-      { EX: 7 * 24 * 60 * 60 }
-    );
+    await saveRefreshToken(user._id, refreshToken);
+
     console.log('REDIS WRITE DONE');
 
 
@@ -149,13 +151,12 @@ router.post('/refresh-token', async (req, res) => {
   try {
     const decoded = verifyRefreshToken(refreshToken);
 
-    const redisKey = `refresh:${decoded.userId}`;
-    const storedToken = await redisClient.get(redisKey);
-    const hashedIncomingToken = hashToken(refreshToken);
+    const isValid = await verifyRefreshToken(decoded.userId, refreshToken);
 
-    if (!storedToken || storedToken !== hashedIncomingToken) {
+    if (!isValid) {
       return res.status(401).json({ msg: 'Invalid refresh token' });
     }
+
 
 
     // 🔁 ROTATION
@@ -168,11 +169,8 @@ router.post('/refresh-token', async (req, res) => {
     const newRefreshToken = generateRefreshToken(newPayload);
 
 
-    await redisClient.set(
-      redisKey,
-      hashToken(newRefreshToken),
-      { EX: 7 * 24 * 60 * 60 }
-    );
+    await saveRefreshToken(decoded.userId, newRefreshToken);
+
 
 
     res.cookie('refreshToken',newRefreshToken,{
@@ -232,7 +230,8 @@ router.post('/logout', authMiddleware, async (req, res) => {
     const userId = req.user.userId;
 
     // delete refresh token -> end session
-    await redisClient.del(`refresh:${userId}`);
+    await invalidateRefreshToken(userId);
+
 
     res.clearCookie('refreshToken',{
       path:'/api/auth/refresh-token'

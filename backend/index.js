@@ -50,3 +50,17 @@ const startServer = async () => {
 
 startServer();
 
+const mongoose = require('mongoose');
+const { disconnectRedis } = require('./utils/redisClient');
+
+const gracefulShutdown = async () => {
+  console.log('🛑 Shutting down gracefully...');
+  await mongoose.disconnect();
+  await disconnectRedis();
+  process.exit(0);
+};
+
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);
+
+
