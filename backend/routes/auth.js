@@ -6,6 +6,13 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 const authMiddleware = require('../middleware/authMiddleware')
 const { redisClient } = require('../utils/redisClient');
+const requireAdmin = require('../middleware/requireAdmin');
+const crypto = require('crypto');
+
+const hashToken = (token) => {
+  return crypto.createHash('sha256').update(token).digest('hex');
+};
+
 
 const{
   generateAccessToken,
@@ -34,14 +41,13 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ msg: 'User already exists' });
     }
 
-    // 2. Hash password
     
 
     // 3. Create new user
     const newUser = new User({
       name,
       email,
-      password: hashedPassword,
+      password,
     });
 
     // 4. Save user to DB
@@ -87,20 +93,27 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
 
-    const payload = { userId: user._id };
+    const payload = { userId: user._id ,role:user.role,};
 
+    console.log('ABOUT TO GENERATE TOKENS');
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
+    console.log('TOKENS GENERATED');
+
+    const hashedRefreshToken = hashToken(refreshToken);
+    console.log('ABOUT TO WRITE TO REDIS');
 
     await redisClient.set(
       `refresh:${user._id}`,
-      refreshToken,
+      hashedRefreshToken,
       { EX: 7 * 24 * 60 * 60 }
     );
+    console.log('REDIS WRITE DONE');
+
 
     res.cookie('refreshToken',refreshToken,{
       httpOnly:true,
-      samesite:'strict',
+      sameSite:'strict',
       secure:false, // true in production
       maxAge:7*24*60*60*1000,
       path:'/api/auth/refresh-token'
@@ -138,25 +151,29 @@ router.post('/refresh-token', async (req, res) => {
 
     const redisKey = `refresh:${decoded.userId}`;
     const storedToken = await redisClient.get(redisKey);
+    const hashedIncomingToken = hashToken(refreshToken);
 
-    if (!storedToken || storedToken !== refreshToken) {
+    if (!storedToken || storedToken !== hashedIncomingToken) {
       return res.status(401).json({ msg: 'Invalid refresh token' });
     }
 
-    // 🔁 ROTATION
-    const newAccessToken = generateAccessToken({
-      userId: decoded.userId
-    });
 
-    const newRefreshToken = generateRefreshToken({
-      userId: decoded.userId
-    });
+    // 🔁 ROTATION
+    const newPayload = {
+      userId: decoded.userId,
+      role: decoded.role,
+    };
+
+    const newAccessToken = generateAccessToken(newPayload);
+    const newRefreshToken = generateRefreshToken(newPayload);
+
 
     await redisClient.set(
       redisKey,
-      newRefreshToken,
+      hashToken(newRefreshToken),
       { EX: 7 * 24 * 60 * 60 }
     );
+
 
     res.cookie('refreshToken',newRefreshToken,{
       httpOnly:true,
@@ -178,7 +195,7 @@ router.post('/refresh-token', async (req, res) => {
 
 
 //---------------------------------------fetch all users------------------------------------
-router.get('/get-members', authMiddleware, async (req, res) => {
+router.get('/get-members', authMiddleware,requireAdmin, async (req, res) => {
   try {
     const users = await User.find().select('-password'); // hide passwords
     res.status(200).json({ members: users });
@@ -189,7 +206,7 @@ router.get('/get-members', authMiddleware, async (req, res) => {
 });
 
 //---------------------------------------delete user-------------------------------
-router.delete('/delete/:id', authMiddleware, async (req, res) => {
+router.delete('/delete/:id', authMiddleware,requireAdmin, async (req, res) => {
   try {
     const userId = req.params.id;
     console.log('🗑️ Attempting to delete user ID:', userId);
@@ -218,7 +235,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
     await redisClient.del(`refresh:${userId}`);
 
     res.clearCookie('refreshToken',{
-      path:'/api/auth/refresh-Token'
+      path:'/api/auth/refresh-token'
     })
     .json({ msg: 'Logged out successfully' });
   } catch (err) {

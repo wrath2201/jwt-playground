@@ -274,17 +274,29 @@ Lesson: External dependencies must be ready before handling application traffic.
 
 ### 🔴 Layer 6: Authorization (Not Authentication)
 
-**E25 — User model has no role field**
+**E25 — User model has no role field**   ✅ RESOLVED
 
 * Cannot express permissions
 
-**E16 — Delete user endpoint lacks authorization**
+Status: Resolved
+Fix: Introduced role-based authorization with roles stored in DB and embedded in JWTs.
+Lesson: Authorization must be explicit; authentication alone is insufficient. Role changes are applied on token refresh to balance security and scalability.
+
+**E16 — Delete user endpoint lacks authorization**   ✅ RESOLVED
 
 * Any authenticated user can delete any user
 
-**E17 — Get-members endpoint lacks access control**
+Status: Resolved
+Fix: Restricted delete operation to admin users using role-based authorization middleware. User roles are stored in the database and enforced via JWT claims.
+Lesson: Destructive operations must never rely on authentication alone; explicit authorization is mandatory to prevent privilege abuse.
+
+**E17 — Get-members endpoint lacks access control**   ✅ RESOLVED
 
 * Any authenticated user can fetch all users
+
+Status: Resolved
+Fix: Limited access to user listing endpoints to admin roles only by enforcing authorization middleware.
+Lesson: Data visibility is a form of permission. Read access must be governed as strictly as write or delete actions.
 
 ---
 
